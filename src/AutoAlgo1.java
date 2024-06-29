@@ -9,7 +9,7 @@ public class AutoAlgo1 {
 	PixelState map[][];
 	Drone drone;
 	Point droneStartingPoint;
-	
+		
 	ArrayList<Point> points;
 	
 	
@@ -19,7 +19,7 @@ public class AutoAlgo1 {
 	
 	boolean isSpeedUp = false;
 	
-	Graph mGraph = new Graph();
+	GraphMine mGraph = new GraphMine();
 	
 	CPU ai_cpu;
 	public AutoAlgo1(Map realMap) {
@@ -514,5 +514,4 @@ public class AutoAlgo1 {
 		return new Point((p1.x + p2.x) /2, (p1.y + p2.y) /2);
 	}
 	
-
 }

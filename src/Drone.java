@@ -11,7 +11,8 @@ import java.util.List;
 public class Drone {
 	private double gyroRotation;
 	private Point sensorOpticalFlow;
-	
+    private double batteryLevel;
+    private long startTime;
 	private Point pointFromStart;
 	public Point startPoint;
 	public List<Lidar> lidars;
@@ -21,6 +22,19 @@ public class Drone {
 	private double speed;
 	private CPU cpu;
 	
+	// Add new sensor fields
+    private double yaw;
+    private double Vx, Vy;
+    private double pitch, roll;
+    private double accX, accY;
+    
+    // New fields for PID controllers
+    private PID pitchPID, rollPID, yawPID, altitudePID;
+    private double desiredPitch, desiredRoll, desiredYaw, desiredAltitude;
+	
+    private double prevVx, prevVy, prevZ; // Previous velocities for acceleration calculation
+    private long prevTime; // Previous time for acceleration calculation
+    
 	public Drone(Map realMap) {
 		this.realMap = realMap;
 		
@@ -30,9 +44,22 @@ public class Drone {
 		lidars = new ArrayList<>();
 
 		speed = 0.2;
+		batteryLevel = 100;
+		startTime = System.currentTimeMillis();
 		
 		rotation = 0;
 		gyroRotation = rotation;
+		
+		// Initialize PID controllers
+        pitchPID = new PID(1.0, 0.01, 0.1, 10.0); 
+        rollPID = new PID(1.0, 0.01, 0.1, 10.0);
+        yawPID = new PID(1.0, 0.01, 0.1, 10.0);
+        altitudePID = new PID(1.0, 0.01, 0.1, 10.0);
+
+        prevVx = 0;
+        prevVy = 0;
+        prevZ = 0;
+        prevTime = System.currentTimeMillis();
 		
 		cpu = new CPU(100,"Drone");
 	}
@@ -61,7 +88,6 @@ public class Drone {
 	public void update(int deltaTime) {
 
 		double distancedMoved = (speed*100)*((double)deltaTime/1000);
-		
 		pointFromStart =  Tools.getPointByDistance(pointFromStart, rotation, distancedMoved);
 		
 		double noiseToDistance = Tools.noiseBetween(WorldParams.min_motion_accuracy,WorldParams.max_motion_accuracy,false);
@@ -71,6 +97,12 @@ public class Drone {
 		double milli_per_minute = 60000;
 		gyroRotation += (1-noiseToRotation)*deltaTime/milli_per_minute;
 		gyroRotation = formatRotation(gyroRotation);
+		
+		 // Update sensor data
+        updateSensors(deltaTime);
+        
+        // Update control outputs
+        updateControlOutputs(deltaTime);
 	}
 	
 	public static double formatRotation(double rotationValue) {
@@ -131,6 +163,7 @@ public class Drone {
 	
 	boolean initPaint = false;
 	BufferedImage mImage;
+	
 	int j=0;
 	public void paint(Graphics g) {
 		if(!initPaint) {
@@ -162,7 +195,87 @@ public class Drone {
 		info += "Location: " + pointFromStart +"<br>";
 		info += "gyroRotation: " + df.format(gyroRotation) +"<br>";
 		info += "sensorOpticalFlow: " + sensorOpticalFlow +"<br>";
+		info += "BatteryLevel:" + getBatteryLevel() +"<br>";
+		info += "Yaw:" + df.format(yaw) + "<br>";
+		info += "pitch: " + df.format(pitch) + "<br>";
+		info += "roll: " + df.format(roll) + "br";
+		info += "Vy: " + df.format(Vy) +"<br>";
+		info += "Vx: " + df.format(Vx) +"<br>";
+		info += "accX: " + df.format(accX) +"<br>";
+		info += "accY: " + df.format(accY) +"<br>";
+		
 		info += "</html>";
 		return info;
 	}
+			
+	 public long getBatteryLevel() {
+	        return (long) this.batteryLevel;
+	    }
+
+	 public void calculateBatteryTime() 
+	 {
+		 long currentTime = System.currentTimeMillis();
+	        long elapsedTime = (currentTime - startTime) / 1000; // elapsed time in seconds
+	        int maxFlightTime = 480; // 8 minutes in seconds
+
+	        int remainingTime = maxFlightTime - (int) elapsedTime;
+	        int batteryLevel = (int) ((remainingTime / (double) maxFlightTime) * 100);
+	        this.batteryLevel =  Math.max(batteryLevel, 0); // Ensure it doesn't go below 0
+	 }
+	 
+	// Methods for updating and calculating sensor data
+	    public void updateSensors(int deltaTime) {
+	        // Update yaw, pitch, roll based on gyroRotation
+	        yaw = gyroRotation;
+	        pitch = calculatePitch();
+	        roll = calculateRoll();
+
+	        // Update velocities based on speed and direction
+	        Vx = speed * Math.cos(Math.toRadians(rotation));
+	        Vy = speed * Math.sin(Math.toRadians(rotation));
+
+	        // Update accelerations
+	        accX = calculateAccelerationX(deltaTime);
+	        accY = calculateAccelerationY(deltaTime);
+	        
+	     // Update previous velocities and time for next acceleration calculation
+	        prevVx = Vx;
+	        prevVy = Vy;
+	        prevTime = System.currentTimeMillis();
+	    }
+	    
+	    // Implement sensor calculation logic
+	    private double calculatePitch() {
+	        return Math.toDegrees(Math.atan2(Vy, Vx));
+	    }
+
+	    private double calculateRoll() {
+	        return Math.toDegrees(Math.atan2(accY, accX));
+	    }
+
+	    private double calculateAccelerationX(int deltaTime) {
+	        return (Vx / deltaTime) * 1000;
+	    }
+
+	    private double calculateAccelerationY(int deltaTime) {
+	        return (Vy / deltaTime) * 1000;
+	    }
+	    
+	    private void updateControlOutputs(int deltaTime) {
+	        double dt = deltaTime / 1000.0;
+
+	        // Calculate control outputs using PID controllers
+	        double pitchControl = pitchPID.update(desiredPitch - pitch, dt);
+	        double rollControl = rollPID.update(desiredRoll - roll, dt);
+	        double yawControl = yawPID.update(desiredYaw - yaw, dt);
+	        
+	        DecimalFormat df = new DecimalFormat("#.####");
+	        
+			String info = "<html>";
+			info += "Pitch Control: " + pitchControl + "<br>";
+			info += "Roll Control: " + rollControl + "<br>";
+			info += "Yaw Control: " + yawControl + "<br>";
+			
+			SimulationWindow.getInfo_label_Of_PID().setText(info);
+	    }
 }
