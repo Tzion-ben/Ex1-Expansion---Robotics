@@ -246,12 +246,13 @@ public class AutoAlgo1 {
 	boolean start_return_home = false;
 	
 	Point init_point;
+
 	public void ai(int deltaTime) {
 		if(!SimulationWindow.toogleAI) {
 			return;
 		}
-	
-		
+
+
 		if(is_init) {
 			speedUp();
 			Point dronePoint = drone.getOpticalSensorLocation();
@@ -260,20 +261,25 @@ public class AutoAlgo1 {
 			mGraph.addVertex(dronePoint);
 			is_init = false;
 		}
-		
+
 		if(isLeftRightRotationEnable) {
 			//doLeftRight();
 		}
-		
-		
+
+
 		Point dronePoint = drone.getOpticalSensorLocation();
 
-		
+
 		if(SimulationWindow.return_home) {
-			
+
 			if( Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) <  max_distance_between_points) {
 				if(points.size() <= 1 && Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) <  max_distance_between_points/5) {
 					speedDown();
+					if (Tools.getDistanceBetweenPoints(getLastPoint(), drone.startPoint) < max_distance_between_points / 1000) {
+						// Optionally, check if drone is close enough to starting point to stop completely
+						drone.stop(); // Implement a method to stop the drone completely
+						SimulationWindow.return_home =false;
+					}
 				} else {
 					removeLastPoint();
 				}
@@ -284,43 +290,43 @@ public class AutoAlgo1 {
 				mGraph.addVertex(dronePoint);
 			}
 		}
-	
-		
-		
+
+
+
 		if(!is_risky) {
 			Lidar lidar = drone.lidars.get(0);
 			if(lidar.current_distance <= max_risky_distance ) {
 				is_risky = true;
 				risky_dis = lidar.current_distance;
-				
+
 			}
-			
-			
+
+
 			Lidar lidar1 = drone.lidars.get(1);
 			if(lidar1.current_distance <= max_risky_distance/3 ) {
 				is_risky = true;
 			}
-			
+
 			Lidar lidar2 = drone.lidars.get(2);
 			if(lidar2.current_distance <= max_risky_distance/3 ) {
 				is_risky = true;
 			}
-			
+
 		} else {
 			if(!try_to_escape) {
 				try_to_escape = true;
 				Lidar lidar1 = drone.lidars.get(1);
 				double a = lidar1.current_distance;
-				
+
 				Lidar lidar2 = drone.lidars.get(2);
 				double b = lidar2.current_distance;
-				
-				
-				
+
+
+
 				int spin_by = max_angle_risky;
-			
-			
-				
+
+
+
 				if(a > 270 && b > 270) {
 					is_lidars_max = true;
 					Point l1 = Tools.getPointByDistance(dronePoint, lidar1.degrees + drone.getGyroRotation(), lidar1.current_distance);
@@ -328,7 +334,7 @@ public class AutoAlgo1 {
 					Point last_point = getAvgLastPoint();
 					double dis_to_lidar1 = Tools.getDistanceBetweenPoints(last_point,l1);
 					double dis_to_lidar2 = Tools.getDistanceBetweenPoints(last_point,l2);
-					
+
 					if(SimulationWindow.return_home) {
 						if( Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) <  max_distance_between_points) {
 							removeLastPoint();
@@ -339,40 +345,41 @@ public class AutoAlgo1 {
 							mGraph.addVertex(dronePoint);
 						}
 					}
-					
+
 					spin_by = 90;
 					if(SimulationWindow.return_home) {
 						spin_by *= -1;
 					}
-					
-					
+
+
 					if(dis_to_lidar1 < dis_to_lidar2) {
-						
-						spin_by *= (-1 ); 
+
+						spin_by *= (-1 );
 					}
 				} else {
-					
-					
+
+
 					if(a < b ) {
-						spin_by *= (-1 ); 
+						spin_by *= (-1 );
 					}
 				}
-				
-				
-				
-				spinBy(spin_by,true,new Func() { 
-						@Override
-						public void method() {
-							try_to_escape = false;
-							is_risky = false;
-						}
+
+
+
+				spinBy(spin_by,true,new Func() {
+					@Override
+					public void method() {
+						try_to_escape = false;
+						is_risky = false;
+					}
 				});
 			}
 		}
-			
+
 		//}
 	}
-	
+
+
 	int counter = 0;
 	
 	public void doLeftRight() {
