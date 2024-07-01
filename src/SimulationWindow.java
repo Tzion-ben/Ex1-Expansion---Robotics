@@ -7,6 +7,9 @@ import javax.swing.*;
 public class SimulationWindow {
 
     private JFrame frame;
+    private Sound onSound ;
+    private Sound offSound;
+    private Sound returnHomeSound;
 
     public static void main(String[] args) {
         EventQueue.invokeLater(new Runnable() {
@@ -31,6 +34,9 @@ public class SimulationWindow {
     boolean toogleStop = true;
 
     private void initialize() {
+        onSound = new Sound("Voices\\on.wav");
+        offSound = new Sound("Voices\\OFF.wav");
+        returnHomeSound = new Sound("Voices\\RETURN HOME.wav");
         frame = new JFrame();
         frame.setSize(1800, 1000);
         frame.setTitle("Drone Simulator");
@@ -43,11 +49,14 @@ public class SimulationWindow {
         JButton stopBtn = new JButton("Start/Pause");
         stopBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+
                 if (toogleStop) {
                     algo1.drone.calculateBatteryTime();
+                    // offSound.play();
                     CPU.stopAllCPUS();
                 } else {
                     CPU.resumeAllCPUS();
+                   //onSound.play();
                 }
                 toogleStop = !toogleStop;
             }
@@ -181,6 +190,7 @@ public class SimulationWindow {
         JButton returnBtn = new JButton("Return Home");
         returnBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                returnHomeSound.play();
                 return_home = !return_home;
                 algo1.speedDown();
                 algo1.spinBy(180, true, new Func() {

@@ -21,6 +21,7 @@ public class Drone {
 	private double rotation;
 	private double speed;
 	private CPU cpu;
+
 	
 	// Add new sensor fields
     private double yaw;
@@ -62,6 +63,7 @@ public class Drone {
         prevTime = System.currentTimeMillis();
 		
 		cpu = new CPU(100,"Drone");
+		//startSound = new Sound(".wav");
 	}
 	
 	public void play() {
