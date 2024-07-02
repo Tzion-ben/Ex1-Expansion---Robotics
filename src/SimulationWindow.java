@@ -30,6 +30,7 @@ public class SimulationWindow {
 
     public static JLabel info_label;
     public static JLabel info_label_Of_PID;
+    public static JLabel info_label_Of_LQR;
     public static boolean return_home = false;
     boolean toogleStop = true;
 
@@ -224,6 +225,10 @@ public class SimulationWindow {
         info_label_Of_PID.setBounds(100, 500, 300, 200);
         frame.getContentPane().add(info_label_Of_PID);
 
+        info_label_Of_LQR = new JLabel();
+        info_label_Of_LQR.setBounds(100, 300, 300, 200);
+        frame.getContentPane().add(info_label_Of_LQR);
+
         info_label2 = new JLabel();
         info_label2.setBounds(1500, 450, 300, 200);
         frame.getContentPane().add(info_label2);
@@ -345,5 +350,9 @@ public class SimulationWindow {
 
     public static JLabel getInfo_label_Of_PID() {
         return info_label_Of_PID;
+    }
+
+    public static JLabel getInfo_label_Of_LQR() {
+        return info_label_Of_LQR;
     }
 }

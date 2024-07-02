@@ -1,7 +1,8 @@
+import org.ejml.simple.SimpleMatrix;
+
 import javax.imageio.ImageIO;
 
 import java.awt.Graphics;
-import java.awt.Window;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.text.DecimalFormat;
@@ -32,8 +33,26 @@ public class Drone {
     // New fields for PID controllers
     private PID pitchPID, rollPID, yawPID, altitudePID;
     private double desiredPitch, desiredRoll, desiredYaw, desiredAltitude;
-	
-    private double prevVx, prevVy, prevZ; // Previous velocities for acceleration calculation
+
+	// Define system matrices for LQR
+	SimpleMatrix A = new SimpleMatrix(new double[][]{
+			{1, 0.1},
+			{0, 1}
+	});
+	SimpleMatrix B = new SimpleMatrix(new double[][]{
+			{0.5 * 0.1 * 0.1},
+			{0.1}
+	});
+	SimpleMatrix Q = SimpleMatrix.diag(1, 1);
+	SimpleMatrix R = new SimpleMatrix(new double[][]{{1}});
+
+	// Initialize LQR controllers
+	LQR pitchLQR = new LQR(A, B, Q, R);
+	LQR rollLQR = new LQR(A, B, Q, R);
+	LQR yawLQR = new LQR(A, B, Q, R);
+
+
+	private double prevVx, prevVy, prevZ; // Previous velocities for acceleration calculation
     private long prevTime; // Previous time for acceleration calculation
     
 	public Drone(Map realMap) {
@@ -265,19 +284,49 @@ public class Drone {
 	    
 	    private void updateControlOutputs(int deltaTime) {
 	        double dt = deltaTime / 1000.0;
+			pidCalculate(dt);
+			lqrcalculate(dt);
 
-	        // Calculate control outputs using PID controllers
-	        double pitchControl = pitchPID.update(desiredPitch - pitch, dt);
-	        double rollControl = rollPID.update(desiredRoll - roll, dt);
-	        double yawControl = yawPID.update(desiredYaw - yaw, dt);
-	        
-	        DecimalFormat df = new DecimalFormat("#.####");
-	        
+
+	    }
+
+		private void lqrcalculate(double dt)
+		{
+			SimpleMatrix pitchState = new SimpleMatrix(new double[][]{{pitch}, {desiredPitch - pitch}});
+			SimpleMatrix rollState = new SimpleMatrix(new double[][]{{roll}, {desiredRoll - roll}});
+			SimpleMatrix yawState = new SimpleMatrix(new double[][]{{yaw}, {desiredYaw - yaw}});
+
+			// Calculate control outputs using LQR controllers
+			double pitchControl = pitchLQR.update(pitchState).get(0);
+			double rollControl = rollLQR.update(rollState).get(0);
+			double yawControl = yawLQR.update(yawState).get(0);
+
+			DecimalFormat df = new DecimalFormat("#.####");
+
 			String info = "<html>";
+			info+= "LQR <br>";
 			info += "Pitch Control: " + pitchControl + "<br>";
 			info += "Roll Control: " + rollControl + "<br>";
 			info += "Yaw Control: " + yawControl + "<br>";
-			
+
+			SimulationWindow.getInfo_label_Of_LQR().setText(info);
+		}
+
+		private void pidCalculate(double dt){
+
+			// Calculate control outputs using PID controllers
+			double pitchControl = pitchPID.update(desiredPitch - pitch, dt);
+			double rollControl = rollPID.update(desiredRoll - roll, dt);
+			double yawControl = yawPID.update(desiredYaw - yaw, dt);
+
+			DecimalFormat df = new DecimalFormat("#.####");
+
+			String info = "<html>";
+			info+= "PID <br>";
+			info += "Pitch Control: " + pitchControl + "<br>";
+			info += "Roll Control: " + rollControl + "<br>";
+			info += "Yaw Control: " + yawControl + "<br>";
+
 			SimulationWindow.getInfo_label_Of_PID().setText(info);
-	    }
+		}
 }
