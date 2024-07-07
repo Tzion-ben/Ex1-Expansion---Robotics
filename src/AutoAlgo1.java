@@ -1,11 +1,14 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.util.List;
 
-public class AutoAlgo1 {
+public class AutoAlgo1 implements Algo {
 
 	int map_size = 3000;
-	enum PixelState {blocked,explored,unexplored,visited};
+	public enum PixelState {
+		blocked, explored, unexplored, visited
+	}
 	PixelState map[][];
 	Drone drone;
 	Point droneStartingPoint;
@@ -22,25 +25,28 @@ public class AutoAlgo1 {
 	GraphMine mGraph = new GraphMine();
 
 	CPU ai_cpu;
-	public AutoAlgo1(Map realMap) {
+	public AutoAlgo1(Map realMap,DroneType droneType,Color color) {
 		degrees_left = new ArrayList<>();
 		degrees_left_func =  new ArrayList<>();
 		points = new ArrayList<Point>();
 
-		drone = new Drone(realMap);
-		drone.addLidar(0);
-		drone.addLidar(90);
-		drone.addLidar(-90);
+		drone = new Drone(realMap,droneType,color);
+		//drone.addLidar(0);
+		//drone.addLidar(90);
+		//drone.addLidar(-90);
 
 
-		initMap();
+		initMap(realMap);
 
 		isRotating = 0;
 		ai_cpu = new CPU(200,"Auto_AI");
 		ai_cpu.addFunction(this::update);
 	}
+	public GraphMine getMGraph(){
+		return mGraph;
+	}
 
-	public void initMap() {
+	public void initMap(Map realMap) {
 		map = new PixelState[map_size][map_size];
 		for(int i=0;i<map_size;i++) {
 			for(int j=0;j<map_size;j++) {
@@ -112,6 +118,7 @@ public class AutoAlgo1 {
 
 	}
 
+	@Override
 	public void setPixel(double x, double y,PixelState state) {
 		int xi = (int)x;
 		int yi = (int)y;
@@ -124,6 +131,11 @@ public class AutoAlgo1 {
 		if(map[xi][yi] == PixelState.unexplored) {
 			map[xi][yi] = state;
 		}
+	}
+
+	@Override
+	public void setPixel(double x, double y, MPCAlgo.PixelState state) {
+
 	}
 	/*
 
@@ -184,7 +196,7 @@ public class AutoAlgo1 {
 						g.setColor(Color.RED);
 					}
 					else if(map[i][j] == PixelState.explored) {
-						g.setColor(Color.YELLOW);
+						g.setColor(Color.white);
 					}
 					else if(map[i][j] == PixelState.visited) {
 						g.setColor(Color.BLUE);
@@ -235,6 +247,17 @@ public class AutoAlgo1 {
 	int max_risky_distance = 150;
 	boolean try_to_escape = false;
 	double  risky_dis = 0;
+
+	public boolean isIs_risky() {
+		return is_risky;
+	}
+	public Drone getDrone() {
+		return drone;
+	}
+	public void setIs_risky(boolean is_risky) {
+		this.is_risky = is_risky;
+	}
+
 	int max_angle_risky = 10;
 
 	boolean is_lidars_max = false;
@@ -246,6 +269,10 @@ public class AutoAlgo1 {
 	boolean start_return_home = false;
 
 	Point init_point;
+
+	public double getRisky_dis() {
+		return risky_dis;
+	}
 
 	public void ai(int deltaTime) {
 		if(!SimulationWindow.toogleAI) {

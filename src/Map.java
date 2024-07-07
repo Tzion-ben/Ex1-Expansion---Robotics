@@ -58,4 +58,16 @@ public class Map {
 		g.setColor(c);
 	}
 
+	public int startY (){
+		return map[0].length;
+	}
+
+	public int startX (){
+		return map.length;
+	}
+
+	public boolean getMapIJ(int i , int j) {
+		return map[i][j];
+	}
+
 }
