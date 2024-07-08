@@ -1,18 +1,19 @@
-import java.awt.*;
-
+import java.awt.Graphics;
 import javax.swing.JComponent;
+import java.util.List;
 
+public class Painter extends JComponent {
+	private List<Algo> algos;
 
-public class Painter extends JComponent{
-	AutoAlgo1 algo;
-	
-	public Painter(AutoAlgo1 algo) {
-		this.algo = algo;
+	public Painter(List<Algo> algos) {
+		this.algos = algos;
 	}
-	
+
 	@Override
-	public void paintComponent(Graphics g) {
+	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		algo.paint(g);
+		for (Algo algo : algos) {
+			algo.paint(g);
+		}
 	}
 }

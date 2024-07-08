@@ -10,23 +10,26 @@ public class Lidar{
 		this.drone = drone;
 		this.degrees = degrees;
 	}
-	
+
 	public double getDistance(int deltaTime) {
-		Point actualPointToShoot= drone.getPointOnMap();
-		double rotation = drone.getRotation()+degrees;
-		
-		double distanceInCM=1;
-		while(distanceInCM <= WorldParams.lidarLimit) { 
+		Point actualPointToShoot = drone.getPointOnMap();
+		double rotation = drone.getRotation() + degrees;
+
+		double distanceInCM = 1;
+		while (distanceInCM <= WorldParams.lidarLimit) {
 			Point p = Tools.getPointByDistance(actualPointToShoot, rotation, distanceInCM);
-			if(drone.realMap.isCollide((int)p.x,(int)p.y)) {
+			boolean isCollision = drone.realMap.isCollide((int) p.x, (int) p.y);
+			System.out.println("Checking point: " + p.x + ", " + p.y + " - collision: " + isCollision);
+			if (isCollision) {
+				System.out.println("Collision detected at distance: " + distanceInCM + " for lidar at " + degrees + " degrees");
 				break;
 			}
 			distanceInCM++;
 		}
-		
-		
+
 		return distanceInCM;
 	}
+
 	
 	public double getSimulationDistance(int deltaTime) {
 		Random ran= new Random();
