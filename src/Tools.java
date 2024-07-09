@@ -5,6 +5,18 @@ public class Tools {
 	/*
 	 * distance in CM
 	 */
+
+	public static double getRotationToTarget(double currentRotation, Point from, Point to) {
+		double angle = Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI;
+		double targetRotation = angle - currentRotation;
+
+		// Normalize the angle to the range [-180, 180]
+		while (targetRotation > 180) targetRotation -= 360;
+		while (targetRotation < -180) targetRotation += 360;
+
+		return targetRotation;
+	}
+
 	public static Point getPointByDistance(Point fromPoint, double rotation, double distance) {
 		double radians = Math.PI*(rotation/180);
 		

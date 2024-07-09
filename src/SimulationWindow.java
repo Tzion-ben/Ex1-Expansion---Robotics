@@ -13,6 +13,11 @@ public class SimulationWindow {
     private Sound offSound;
     private Sound returnHomeSound;
 
+    private JButton firstDrone;
+    private JButton secondDrone;
+    private JButton thirdDrone;
+
+
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
             try {

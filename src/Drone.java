@@ -154,6 +154,32 @@ public class Drone {
 		gyroRotation = formatRotation(gyroRotation);
 	}
 
+	public void moveTowards(Point target, int deltaTime) {
+		Point currentLocation = getOpticalSensorLocation();
+		double distance = Tools.getDistanceBetweenPoints(currentLocation, target);
+		double rotation = Tools.getRotationToTarget(getGyroRotation(), currentLocation, target);
+
+		// Adjust the drone's direction towards the target
+		if (rotation > 10) {
+			rotateLeft(deltaTime);
+		} else if (rotation < -10) {
+			rotateRight(-deltaTime);
+		}
+
+		// Move the drone forward if it is facing the target direction
+		if (Math.abs(rotation) < 10) {
+			moveForward(distance);
+		}
+	}
+
+	public void moveForward(double distance) {
+		double distancedMoved = distance;
+		pointFromStart = Tools.getPointByDistance(pointFromStart, rotation, distancedMoved);
+
+		double noiseToDistance = Tools.noiseBetween(WorldParams.min_motion_accuracy, WorldParams.max_motion_accuracy, false);
+		sensorOpticalFlow = Tools.getPointByDistance(sensorOpticalFlow, rotation, distancedMoved * noiseToDistance);
+	}
+
 	public void speedUp(int deltaTime) {
 		speed += (WorldParams.accelerate_per_second * deltaTime / 1000);
 		if (speed > WorldParams.max_speed) {
