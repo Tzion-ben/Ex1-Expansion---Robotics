@@ -34,12 +34,20 @@ public class SimulationWindow {
 
     private List<Algo> drones = new ArrayList<>();
 
+    private JButton firstDroneBtn  = new JButton("First Drone");
+    private JButton secondDroneBtn  = new JButton("Second Drone");
+    private JButton thirdDroneBtn  = new JButton("Third Drone");
+    private JButton StartOver = new JButton("Start Over");
+
     private void initialize() {
+
+        JButton returnBtn = new JButton("Return Home");
+
         onSound = new Sound("Voices\\on.wav");
         offSound = new Sound("Voices\\OFF.wav");
         returnHomeSound = new Sound("Voices\\RETURN HOME.wav");
         frame = new JFrame();
-        frame.setSize(1150, 600);
+        frame.setSize(1150, 650);
         frame.setTitle("Drone Simulator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setLayout(null);
@@ -57,6 +65,8 @@ public class SimulationWindow {
                 CPU.resumeAllCPUS();
             }
             toogleStop = !toogleStop;
+
+            returnBtn.setVisible(true);
         });
         stopBtn.setBackground(Color.BLUE);
         stopBtn.setBounds(925, 0, 120, 30);
@@ -149,7 +159,7 @@ public class SimulationWindow {
         /*
          * Return to Home
          */
-        JButton returnBtn = new JButton("Return Home");
+
         returnBtn.addActionListener(e -> {
             returnHomeSound.play();
             return_home = !return_home;
@@ -158,6 +168,7 @@ public class SimulationWindow {
                 drone.spinBy(180, true, drone::speedUp);
             });
         });
+        returnBtn.setVisible(false);
         returnBtn.setBounds(850, 285, 120, 30);
         returnBtn.setBackground(Color.yellow);
         frame.getContentPane().add(returnBtn);
@@ -168,19 +179,30 @@ public class SimulationWindow {
         Graph.setBounds(1000, 285, 120, 30);
         frame.getContentPane().add(Graph);
 
+        StartOver.addActionListener(e -> {
+            enableOther();
+            frame.dispose();
+            String[] anotherClassArgs = {"arg1", "arg2"};
+            SimulationWindow.main(anotherClassArgs);
+        });
+
+        StartOver.setBounds(926, 380, 120, 40);
+        StartOver.setVisible(false);
+        frame.getContentPane().add(StartOver);
+
         /*
          * Info label
          */
         info_label = new JLabel();
-        info_label.setBounds(850, 500, 300, 200);
+        info_label.setBounds(870, 400, 250, 200);
         frame.getContentPane().add(info_label);
 
         info_label_Of_PID = new JLabel();
-        info_label_Of_PID.setBounds(100, 500, 300, 200);
+        info_label_Of_PID.setBounds(100, 450, 250, 200);
         frame.getContentPane().add(info_label_Of_PID);
 
         info_label2 = new JLabel();
-        info_label2.setBounds(950, 450, 300, 200);
+        info_label2.setBounds(530, 450, 200, 200);
         frame.getContentPane().add(info_label2);
 
         /*
@@ -272,11 +294,6 @@ public class SimulationWindow {
 
     //will wat for that user to click and choose which drone let to fly
     private List<ChoosenDronelgo> chooseDrones(Map map) {
-        JButton firstDroneBtn  = new JButton("First Drone");
-        JButton secondDroneBtn  = new JButton("Second Drone");
-        JButton thirdDroneBtn  = new JButton("Third Drone");
-
-
         List<ChoosenDronelgo> choosenDrones = new ArrayList<>();
 
         firstDroneBtn.addActionListener(e -> {
@@ -288,6 +305,7 @@ public class SimulationWindow {
             else
                 drones.add(new SLAMAlgo(map, droneType1,Color.BLUE));
 
+            disableOther();
             main();
         });
 
@@ -300,6 +318,7 @@ public class SimulationWindow {
             else
                 drones.add(new SLAMAlgo(map, droneType2,Color.RED));
 
+            disableOther();
             main();
         });
 
@@ -312,20 +331,38 @@ public class SimulationWindow {
             else
                 drones.add(new SLAMAlgo(map, droneType3,Color.BLACK));
 
+            disableOther();
             main();
         });
 
-        firstDroneBtn.setBounds(850, 500, 170, 50);
+        firstDroneBtn.setBackground(Color.RED);
+        firstDroneBtn.setBounds(850, 380, 120, 40);
         frame.getContentPane().add(firstDroneBtn);
 
-        secondDroneBtn.setBounds(850, 550, 170, 50);
+        secondDroneBtn.setBackground(Color.RED);
+        secondDroneBtn.setBounds(1000, 380, 120, 40);
         frame.getContentPane().add(secondDroneBtn);
 
-        thirdDroneBtn.setBounds(850, 600, 170, 50);
+        thirdDroneBtn.setBackground(Color.RED);
+        thirdDroneBtn.setBounds(850, 425, 120, 40);
         frame.getContentPane().add(thirdDroneBtn);
 
 
         return choosenDrones;
+    }
+
+    private void disableOther() {
+        StartOver.setVisible(true);
+        firstDroneBtn.setVisible(false);
+        secondDroneBtn.setVisible(false);
+        thirdDroneBtn.setVisible(false);
+    }
+
+    private void enableOther() {
+        StartOver.setVisible(false);
+        firstDroneBtn.setVisible(true);
+        secondDroneBtn.setVisible(true);
+        thirdDroneBtn.setVisible(true);
     }
 
     //will return the algo that choosen and the drone number
