@@ -1,7 +1,6 @@
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.swing.*;
@@ -12,11 +11,6 @@ public class SimulationWindow {
     private Sound onSound;
     private Sound offSound;
     private Sound returnHomeSound;
-
-    private JButton firstDrone;
-    private JButton secondDrone;
-    private JButton thirdDrone;
-
 
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
@@ -38,14 +32,14 @@ public class SimulationWindow {
     public static boolean return_home = false;
     boolean toogleStop = true;
 
-    private List<Algo> drones;
+    private List<Algo> drones = new ArrayList<>();
 
     private void initialize() {
         onSound = new Sound("Voices\\on.wav");
         offSound = new Sound("Voices\\OFF.wav");
         returnHomeSound = new Sound("Voices\\RETURN HOME.wav");
         frame = new JFrame();
-        frame.setSize(1800, 1000);
+        frame.setSize(1150, 600);
         frame.setTitle("Drone Simulator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setLayout(null);
@@ -64,7 +58,8 @@ public class SimulationWindow {
             }
             toogleStop = !toogleStop;
         });
-        stopBtn.setBounds(1300, 0, 170, 50);
+        stopBtn.setBackground(Color.BLUE);
+        stopBtn.setBounds(925, 0, 120, 30);
         frame.getContentPane().add(stopBtn);
 
         /*
@@ -72,12 +67,14 @@ public class SimulationWindow {
          */
         JButton speedBtn1 = new JButton("speedUp");
         speedBtn1.addActionListener(e -> drones.forEach(Algo::speedUp));
-        speedBtn1.setBounds(1300, 100, 100, 50);
+        speedBtn1.setBackground(Color.GREEN);
+        speedBtn1.setBounds(850, 45, 120, 30);
         frame.getContentPane().add(speedBtn1);
 
         JButton speedBtn2 = new JButton("speedDown");
         speedBtn2.addActionListener(e -> drones.forEach(Algo::speedDown));
-        speedBtn2.setBounds(1400, 100, 100, 50);
+        speedBtn2.setBackground(Color.GREEN);
+        speedBtn2.setBounds(1000, 45, 120, 30);
         frame.getContentPane().add(speedBtn2);
 
         /*
@@ -85,42 +82,50 @@ public class SimulationWindow {
          */
         JButton spinBtn1 = new JButton("spin180");
         spinBtn1.addActionListener(e -> drones.forEach(drone -> drone.spinBy(180)));
-        spinBtn1.setBounds(1300, 200, 100, 50);
+        spinBtn1.setBackground(Color.GREEN);
+        spinBtn1.setBounds(850, 90, 120, 30);
         frame.getContentPane().add(spinBtn1);
 
         JButton spinBtn2 = new JButton("spin90");
         spinBtn2.addActionListener(e -> drones.forEach(drone -> drone.spinBy(90)));
-        spinBtn2.setBounds(1400, 200, 100, 50);
+        spinBtn2.setBackground(Color.GREEN);
+        spinBtn2.setBounds(1000, 90, 120, 30);
         frame.getContentPane().add(spinBtn2);
 
         JButton spinBtn3 = new JButton("spin60");
         spinBtn3.addActionListener(e -> drones.forEach(drone -> drone.spinBy(60)));
-        spinBtn3.setBounds(1500, 200, 100, 50);
+        spinBtn3.setBackground(Color.GREEN);
+        spinBtn3.setBounds(850, 125, 120, 30);
         frame.getContentPane().add(spinBtn3);
 
         JButton spinBtn4 = new JButton("spin45");
         spinBtn4.addActionListener(e -> drones.forEach(drone -> drone.spinBy(45)));
-        spinBtn4.setBounds(1300, 300, 100, 50);
+        spinBtn4.setBackground(Color.GREEN);
+        spinBtn4.setBounds(1000, 125, 120, 30);
         frame.getContentPane().add(spinBtn4);
 
         JButton spinBtn5 = new JButton("spin30");
         spinBtn5.addActionListener(e -> drones.forEach(drone -> drone.spinBy(30)));
-        spinBtn5.setBounds(1400, 300, 100, 50);
+        spinBtn5.setBackground(Color.GREEN);
+        spinBtn5.setBounds(850, 160, 120, 30);
         frame.getContentPane().add(spinBtn5);
 
         JButton spinBtn6 = new JButton("spin-30");
         spinBtn6.addActionListener(e -> drones.forEach(drone -> drone.spinBy(-30)));
-        spinBtn6.setBounds(1500, 300, 100, 50);
+        spinBtn6.setBackground(Color.GREEN);
+        spinBtn6.setBounds(1000, 160, 120, 30);
         frame.getContentPane().add(spinBtn6);
 
         JButton spinBtn7 = new JButton("spin-45");
         spinBtn7.addActionListener(e -> drones.forEach(drone -> drone.spinBy(-45)));
-        spinBtn7.setBounds(1600, 300, 100, 50);
+        spinBtn7.setBackground(Color.GREEN);
+        spinBtn7.setBounds(850, 195, 120, 30);
         frame.getContentPane().add(spinBtn7);
 
         JButton spinBtn8 = new JButton("spin-60");
         spinBtn8.addActionListener(e -> drones.forEach(drone -> drone.spinBy(-60)));
-        spinBtn8.setBounds(1700, 300, 100, 50);
+        spinBtn8.setBackground(Color.GREEN);
+        spinBtn8.setBounds(1000, 195, 120, 30);
         frame.getContentPane().add(spinBtn8);
 
         /*
@@ -128,7 +133,8 @@ public class SimulationWindow {
          */
         JButton toggleMapBtn = new JButton("Toggle Map");
         toggleMapBtn.addActionListener(e -> toogleRealMap = !toogleRealMap);
-        toggleMapBtn.setBounds(1300, 400, 120, 50);
+        toggleMapBtn.setBackground(Color.ORANGE);
+        toggleMapBtn.setBounds(850, 240, 120, 30);
         frame.getContentPane().add(toggleMapBtn);
 
         /*
@@ -136,7 +142,8 @@ public class SimulationWindow {
          */
         JButton toggleAIBtn = new JButton("Toggle AI");
         toggleAIBtn.addActionListener(e -> toogleAI = !toogleAI);
-        toggleAIBtn.setBounds(1400, 400, 120, 50);
+        toggleAIBtn.setBackground(Color.ORANGE);
+        toggleAIBtn.setBounds(1000, 240, 120, 30);
         frame.getContentPane().add(toggleAIBtn);
 
         /*
@@ -151,19 +158,21 @@ public class SimulationWindow {
                 drone.spinBy(180, true, drone::speedUp);
             });
         });
-        returnBtn.setBounds(1500, 400, 120, 50);
+        returnBtn.setBounds(850, 285, 120, 30);
+        returnBtn.setBackground(Color.yellow);
         frame.getContentPane().add(returnBtn);
 
         JButton Graph = new JButton("Open Graph");
         Graph.addActionListener(e -> drones.forEach(drone -> drone.getMGraph().drawGraph()));
-        Graph.setBounds(1600, 400, 120, 50);
+        Graph.setBackground(Color.yellow);
+        Graph.setBounds(1000, 285, 120, 30);
         frame.getContentPane().add(Graph);
 
         /*
          * Info label
          */
         info_label = new JLabel();
-        info_label.setBounds(1300, 500, 300, 200);
+        info_label.setBounds(850, 500, 300, 200);
         frame.getContentPane().add(info_label);
 
         info_label_Of_PID = new JLabel();
@@ -171,7 +180,7 @@ public class SimulationWindow {
         frame.getContentPane().add(info_label_Of_PID);
 
         info_label2 = new JLabel();
-        info_label2.setBounds(1500, 450, 300, 200);
+        info_label2.setBounds(950, 450, 300, 200);
         frame.getContentPane().add(info_label2);
 
         /*
@@ -179,11 +188,10 @@ public class SimulationWindow {
          */
         chooseMap();
 
-        JButton chooseMapBtn = new JButton("Choose Map");
-        chooseMapBtn.setBounds(1300, 50, 120, 50);
-        frame.getContentPane().add(chooseMapBtn);
+//        JButton chooseMapBtn = new JButton("Choose Map");
+//        chooseMapBtn.setBounds(1300, 50, 120, 50);
+//        frame.getContentPane().add(chooseMapBtn);
 
-        main();
     }
 
     public JLabel info_label2;
@@ -241,16 +249,13 @@ public class SimulationWindow {
                 File selectedFile = fileChooser.getSelectedFile();
                 if (selectedFile != null && selectedFile.getName().toLowerCase().endsWith(".png")) {
                     try {
-                        Point startPoint = new Point(100, 50);
-                        Map map = new Map(selectedFile.getAbsolutePath(), startPoint);
-                        //DroneType droneType1 = new DroneType("Type 1", Arrays.asList(0, 60, -60));
-                        DroneType droneType2 = new DroneType("Type 2", Arrays.asList(0, 80, -80));
-                        //DroneType droneType3 = new DroneType("Type 3", Arrays.asList(0, 70, -70));
-                        drones = Arrays.asList(
-                                //new AutoAlgo1(map, droneType1, Color.BLUE)
-                                new SLAMAlgo(map, droneType2,Color.RED)
-                                //new AutoAlgo1(map, droneType3,Color.BLACK)
-                        );
+//                        Point startPoint = new Point(50, 50);
+                        Map map = new Map(selectedFile.getAbsolutePath());
+
+                        int [] arrPosStart = map.startPos();
+//                        map.set_drone_start_point(new Point (arrPosStart[0] , arrPosStart[1]));
+                        List <ChoosenDronelgo> choosenTypes = chooseDrones(map);
+
                         break; // Exit the loop if map is successfully loaded
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(frame, "Error loading map file: " + e.getMessage());
@@ -262,6 +267,91 @@ public class SimulationWindow {
                 System.exit(0);
             }
         }
+    }
+
+
+    //will wat for that user to click and choose which drone let to fly
+    private List<ChoosenDronelgo> chooseDrones(Map map) {
+        JButton firstDroneBtn  = new JButton("First Drone");
+        JButton secondDroneBtn  = new JButton("Second Drone");
+        JButton thirdDroneBtn  = new JButton("Third Drone");
+
+
+        List<ChoosenDronelgo> choosenDrones = new ArrayList<>();
+
+        firstDroneBtn.addActionListener(e -> {
+            ChoosenDronelgo resul = chooseAlgo(1);
+
+            DroneType droneType1 = new DroneType("Type 1", Arrays.asList(0, 60, -60));
+            if(resul.getAlgoType().equals("AutoAlgo1"))
+                drones.add(new AutoAlgo1(map, droneType1, Color.BLUE));
+            else
+                drones.add(new SLAMAlgo(map, droneType1,Color.BLUE));
+
+            main();
+        });
+
+        secondDroneBtn.addActionListener(e -> {
+            ChoosenDronelgo resul = chooseAlgo(2);
+
+            DroneType droneType2 = new DroneType("Type 2", Arrays.asList(0, 80, -80));
+            if(resul.getAlgoType().equals("AutoAlgo1"))
+                drones.add(new AutoAlgo1(map, droneType2, Color.RED));
+            else
+                drones.add(new SLAMAlgo(map, droneType2,Color.RED));
+
+            main();
+        });
+
+        thirdDroneBtn.addActionListener(e -> {
+            ChoosenDronelgo resul = chooseAlgo(3);
+
+            DroneType droneType3 = new DroneType("Type 3", Arrays.asList(0, 70, -70));
+            if(resul.getAlgoType().equals("AutoAlgo3"))
+                drones.add(new AutoAlgo1(map, droneType3, Color.BLACK));
+            else
+                drones.add(new SLAMAlgo(map, droneType3,Color.BLACK));
+
+            main();
+        });
+
+        firstDroneBtn.setBounds(850, 500, 170, 50);
+        frame.getContentPane().add(firstDroneBtn);
+
+        secondDroneBtn.setBounds(850, 550, 170, 50);
+        frame.getContentPane().add(secondDroneBtn);
+
+        thirdDroneBtn.setBounds(850, 600, 170, 50);
+        frame.getContentPane().add(thirdDroneBtn);
+
+
+        return choosenDrones;
+    }
+
+    //will return the algo that choosen and the drone number
+    private ChoosenDronelgo chooseAlgo(int droneType) {
+        // Options for the JOptionPane
+        Object[] options = {"AI Algo", "SLAM Algo"};
+        ChoosenDronelgo choosenDronelgo = new ChoosenDronelgo();
+
+        choosenDronelgo.setDroneNum(droneType);
+        int choice = JOptionPane.showOptionDialog(frame,
+                "Choose an algo:",
+                "Options",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        // Handle the user choice
+        if (choice == 0)
+            choosenDronelgo.setAlgoType("AutoAlgo1");
+         else
+            choosenDronelgo.setAlgoType("SLAMAlgo");
+
+
+         return choosenDronelgo;
     }
 
     public void updateInfo(int deltaTime) {
@@ -282,3 +372,4 @@ public class SimulationWindow {
         return info_label_Of_PID;
     }
 }
+
