@@ -9,6 +9,9 @@ public interface Algo {
     void updateMapByLidars();
     void updateVisited();
     void setPixel(double x, double y, AutoAlgo1.PixelState state);
+
+    void setPixel(double x, double y, SLAMAlgo.PixelState state);
+
     void setPixel(double x, double y, MPCAlgo.PixelState state);
     void paintBlindMap(Graphics g);
     void paintPoints(Graphics g);

@@ -248,7 +248,7 @@ public class SimulationWindow {
                         //DroneType droneType3 = new DroneType("Type 3", Arrays.asList(0, 70, -70));
                         drones = Arrays.asList(
                                 //new AutoAlgo1(map, droneType1, Color.BLUE)
-                                new MPCAlgo(map, droneType2,Color.RED)
+                                new SLAMAlgo(map, droneType2,Color.RED)
                                 //new AutoAlgo1(map, droneType3,Color.BLACK)
                         );
                         break; // Exit the loop if map is successfully loaded

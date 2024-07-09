@@ -8,11 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Drone {
-	private double gyroRotation;
-	private Point sensorOpticalFlow;
+	public double gyroRotation;
+	public Point sensorOpticalFlow;
 	private double batteryLevel;
 	private long startTime;
-	private Point pointFromStart;
+	public Point pointFromStart;
 	public Point startPoint;
 	public List<Lidar> lidars;
 	private String drone_img_path = "D:\\Tests\\drone_3_pixels.png";
@@ -86,10 +86,10 @@ public class Drone {
 	}
 
 	public Point getPointOnMap() {
-		double x = startPoint.x + pointFromStart.x;
-		double y = startPoint.y + pointFromStart.y;
-		return new Point(x, y);
+		Point opticalSensorLocation = getOpticalSensorLocation();
+		return new Point(opticalSensorLocation.x + startPoint.x, opticalSensorLocation.y + startPoint.y);
 	}
+
 
 	public double getSpeed() {
 		return speed;

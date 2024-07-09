@@ -31,18 +31,19 @@ public class Map {
 				int red = (clr & 0x00ff0000) >> 16;
 				int green = (clr & 0x0000ff00) >> 8;
 				int blue = clr & 0x000000ff;
-				if (red != 0 && green != 0 && blue != 0) { // think black
-					map[x][y] = true;
-				}
+				map[x][y] = (red != 0 && green != 0 && blue != 0);  // Non-black considered passable
 			}
 		}
-
 		return map;
 	}
 
 	boolean isCollide(int x, int y) {
-
-		return !map[x][y];
+		if (x < 0 || x >= map.length || y < 0 || y >= map[0].length) {
+			return true;  // Out of bounds considered as a collision
+		}
+		boolean collision = !map[x][y];
+		System.out.println("Checking collision at (" + x + ", " + y + "): " + collision);
+		return collision;
 	}
 
 	public void paint(Graphics g) {

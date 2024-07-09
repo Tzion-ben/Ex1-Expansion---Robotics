@@ -1,12 +1,12 @@
 import java.awt.Color;
 import java.awt.Graphics;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.PriorityQueue;
 
 public class MPCAlgo implements Algo {
 
-    int map_size = 3000;
-    int max_risky_distance = 150;
-
+    // int map_size = 3000;
     public enum PixelState {
         blocked, explored, unexplored, visited
     }
@@ -14,8 +14,18 @@ public class MPCAlgo implements Algo {
     PixelState[][] map;
     Drone drone;
     Point droneStartingPoint;
+
     ArrayList<Point> points;
 
+    public Drone getDrone() {
+        return drone;
+    }
+
+    public void setDrone(Drone drone) {
+        this.drone = drone;
+    }
+
+    double lastGyroRotation;
     int isRotating;
     ArrayList<Double> degrees_left;
     ArrayList<Func> degrees_left_func;
@@ -23,14 +33,8 @@ public class MPCAlgo implements Algo {
     boolean isSpeedUp = false;
 
     GraphMine mGraph = new GraphMine();
+
     CPU ai_cpu;
-
-    PriorityQueue<Point> unexploredPointsQueue;
-
-    boolean is_risky = false;
-    double risky_distance = 0;
-    double lastGyroRotation = 0;
-    double max_distance_between_points = 100;
 
     public MPCAlgo(Map realMap, DroneType droneType, Color color) {
         degrees_left = new ArrayList<>();
@@ -38,28 +42,36 @@ public class MPCAlgo implements Algo {
         points = new ArrayList<>();
 
         drone = new Drone(realMap, droneType, color);
-
         initMap(realMap);
-        isRotating = 0;
-        ai_cpu = new CPU(200, "Auto_AI");
-        ai_cpu.addFunction(this::update);
 
-        unexploredPointsQueue = new PriorityQueue<>(Comparator.comparingDouble(p -> getDistanceToDrone(p)));
+        isRotating = 0;
+        ai_cpu = new CPU(200, "MPC_AI");
+        ai_cpu.addFunction(this::update);
     }
 
     public GraphMine getMGraph() {
         return mGraph;
     }
 
+    public boolean isIs_risky() {
+        return is_risky;
+    }
+
+    public double getRisky_dis() {
+        return 150;
+    }
+
     public void initMap(Map realMap) {
-        map = new PixelState[map_size][map_size];
-        for (int i = 0; i < map_size; i++) {
-            for (int j = 0; j < map_size; j++) {
-                map[i][j] = PixelState.unexplored;
+        map = new PixelState[realMap.startX()][realMap.startY()];
+        for (int i = 0; i < map.length; i++) {
+            for (int j = 0; j < map[0].length; j++) {
+                if (!realMap.getMapIJ(i, j))
+                    map[i][j] = PixelState.blocked;
+                else
+                    map[i][j] = PixelState.unexplored;
             }
         }
-
-        droneStartingPoint = new Point(map_size / 2, map_size / 2);
+        droneStartingPoint = new Point(drone.startPoint);
     }
 
     public void play() {
@@ -70,7 +82,7 @@ public class MPCAlgo implements Algo {
     public void update(int deltaTime) {
         updateVisited();
         updateMapByLidars();
-        ai(deltaTime);
+        mpcAlgorithm(deltaTime);
 
         if (isRotating != 0) {
             updateRotating(deltaTime);
@@ -92,32 +104,40 @@ public class MPCAlgo implements Algo {
 
     public void updateMapByLidars() {
         Point dronePoint = drone.getOpticalSensorLocation();
-        Point fromPoint = new Point(dronePoint.x + droneStartingPoint.x, dronePoint.y + droneStartingPoint.y);
+        Point fromPoint = new Point((int) (dronePoint.x + droneStartingPoint.x),
+                (int) (dronePoint.y + droneStartingPoint.y));
 
         for (int i = 0; i < drone.lidars.size(); i++) {
             Lidar lidar = drone.lidars.get(i);
             double rotation = drone.getGyroRotation() + lidar.degrees;
+
             for (int distanceInCM = 0; distanceInCM < lidar.current_distance; distanceInCM++) {
                 Point p = Tools.getPointByDistance(fromPoint, rotation, distanceInCM);
-                setPixel(p.x, p.y, PixelState.explored);
+                setPixel((int) p.x, (int) p.y, PixelState.explored);
             }
 
-            if (lidar.current_distance > 0 && lidar.current_distance < WorldParams.lidarLimit - WorldParams.lidarNoise) {
+            if (lidar.current_distance > 0
+                    && lidar.current_distance < WorldParams.lidarLimit - WorldParams.lidarNoise) {
                 Point p = Tools.getPointByDistance(fromPoint, rotation, lidar.current_distance);
-                setPixel(p.x, p.y, PixelState.blocked);
+                setPixel((int) p.x, (int) p.y, PixelState.blocked);
             }
         }
     }
 
     public void updateVisited() {
         Point dronePoint = drone.getOpticalSensorLocation();
-        Point fromPoint = new Point(dronePoint.x + droneStartingPoint.x, dronePoint.y + droneStartingPoint.y);
-
-        setPixel(fromPoint.x, fromPoint.y, PixelState.visited);
+        Point fromPoint = new Point((int) (dronePoint.x + droneStartingPoint.x),
+                (int) (dronePoint.y + droneStartingPoint.y));
+        setPixel((int) fromPoint.x, (int) fromPoint.y, PixelState.visited);
     }
 
     @Override
     public void setPixel(double x, double y, AutoAlgo1.PixelState state) {
+        // This method can be left empty if not used
+    }
+
+    @Override
+    public void setPixel(double x, double y, SLAMAlgo.PixelState state) {
 
     }
 
@@ -126,37 +146,34 @@ public class MPCAlgo implements Algo {
         int xi = (int) x;
         int yi = (int) y;
 
+        if (xi < 0 || xi >= map.length || yi < 0 || yi >= map[0].length) {
+            return;
+        }
+
         if (state == PixelState.visited) {
             map[xi][yi] = state;
             return;
         }
 
-        if (map[xi][yi] == PixelState.unexplored) {
+        if (map[xi][yi] == PixelState.unexplored || map[xi][yi] == PixelState.blocked) {
             map[xi][yi] = state;
-            unexploredPointsQueue.add(new Point(xi, yi));
         }
     }
-
-
 
     public void paintBlindMap(Graphics g) {
         Color c = g.getColor();
 
-        int i = (int) droneStartingPoint.y - (int) drone.startPoint.x;
-        int startY = i;
-        for (; i < map_size; i++) {
-            int j = (int) droneStartingPoint.x - (int) drone.startPoint.y;
-            int startX = j;
-            for (; j < map_size; j++) {
+        for (int i = 0; i < map.length; i++) {
+            for (int j = 0; j < map[0].length; j++) {
                 if (map[i][j] != PixelState.unexplored) {
                     if (map[i][j] == PixelState.blocked) {
                         g.setColor(Color.RED);
                     } else if (map[i][j] == PixelState.explored) {
-                        g.setColor(Color.WHITE);
+                        g.setColor(Color.YELLOW);
                     } else if (map[i][j] == PixelState.visited) {
                         g.setColor(Color.BLUE);
                     }
-                    g.drawLine(i - startY, j - startX, i - startY, j - startX);
+                    g.drawLine(i, j, i, j);
                 }
             }
         }
@@ -173,22 +190,227 @@ public class MPCAlgo implements Algo {
         if (SimulationWindow.toogleRealMap) {
             drone.realMap.paint(g);
         }
-
         paintBlindMap(g);
         paintPoints(g);
-
         drone.paint(g);
     }
 
+    boolean is_init = true;
+    boolean is_finish = true;
+    boolean is_risky = false;
+    boolean is_lidars_max = false;
+    boolean start_return_home = false;
+
+    Point init_point;
+
+    public void mpcAlgorithm(int deltaTime) {
+        if (!SimulationWindow.toogleAI) {
+            return;
+        }
+
+        if (is_init) {
+            speedUp();
+            Point dronePoint = drone.getOpticalSensorLocation();
+            init_point = new Point(dronePoint);
+            points.add(dronePoint);
+            mGraph.addVertex(dronePoint);
+            is_init = false;
+        }
+
+        Point dronePoint = drone.getOpticalSensorLocation();
+
+        if (SimulationWindow.return_home) {
+            if (Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) < 100) {
+                if (points.size() <= 1 && Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) < 20) {
+                    speedDown();
+                    if (Tools.getDistanceBetweenPoints(getLastPoint(), drone.startPoint) < 1) {
+                        drone.stop();
+                        SimulationWindow.return_home = false;
+                    }
+                } else {
+                    removeLastPoint();
+                }
+            }
+        } else {
+            if (Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) >= 100) {
+                points.add(dronePoint);
+                mGraph.addVertex(dronePoint);
+            }
+        }
+
+        if (!is_risky) {
+            Lidar lidar = drone.lidars.get(0);
+            if (lidar.current_distance <= 150) {
+                is_risky = true;
+            }
+
+            Lidar lidar1 = drone.lidars.get(1);
+            if (lidar1.current_distance <= 50) {
+                is_risky = true;
+            }
+
+            Lidar lidar2 = drone.lidars.get(2);
+            if (lidar2.current_distance <= 50) {
+                is_risky = true;
+            }
+
+        } else {
+            if (!is_lidars_max) {
+                is_lidars_max = true;
+                spinBy(90, true, () -> {
+                    is_lidars_max = false;
+                    is_risky = false;
+                });
+            }
+        }
+
+        // A* Pathfinding logic to find the next point
+        Point nextPoint = findNextPoint();
+        if (nextPoint != null && !isBlocked(nextPoint)) {
+            moveToNextPoint(nextPoint, deltaTime);
+        } else {
+            handleNoPathFound();
+        }
+    }
+
+
+    private Point findNextPoint() {
+        // Implement A* algorithm to find the next point
+        return pathfindingAlgorithm();
+    }
+
+    private Point pathfindingAlgorithm() {
+        PriorityQueue<Node> openList = new PriorityQueue<>();
+        boolean[][] closedList = new boolean[map.length][map[0].length];
+        Point startPoint = new Point((int) (droneStartingPoint.x + drone.getOpticalSensorLocation().x),
+                (int) (droneStartingPoint.y + drone.getOpticalSensorLocation().y));
+        Node startNode = new Node(startPoint, null, 0, heuristic(startPoint));
+        openList.add(startNode);
+
+        while (!openList.isEmpty()) {
+            Node current = openList.poll();
+            closedList[(int) current.point.x][(int) current.point.y] = true;
+
+            if (map[(int) current.point.x][(int) current.point.y] == PixelState.unexplored) {
+                return current.point;
+            }
+
+            List<Point> neighbors = getNeighbors(current.point);
+            for (Point neighbor : neighbors){
+                if(!isBlocked(neighbor)&& !closedList[(int) neighbor.x][(int) neighbor.y]){}
+            }
+        }
+        return null;
+    }
+
+    private double heuristic(Point point) {
+        // Heuristic function for A* (Manhattan distance to the goal)
+        Point goal = findGoal();
+        return Math.abs(point.x - goal.x) + Math.abs(point.y - goal.y);
+    }
+
+    private Point findGoal() {
+        // Simplified goal finding (you can set a specific goal or use another strategy)
+        for (int i = 0; i < map.length; i++) {
+            for (int j = 0; j < map[0].length; j++) {
+                if (map[i][j] == PixelState.unexplored && map[i][j] != PixelState.blocked) {
+                    return new Point(i, j);
+                }
+            }
+        }
+        return new Point(map.length - 1, map[0].length - 1);
+    }
+
+    private List<Point> getNeighbors(Point p) {
+        List<Point> neighbors = new ArrayList<>();
+        neighbors.add(new Point(p.x + 1, p.y));
+        neighbors.add(new Point(p.x - 1, p.y));
+        neighbors.add(new Point(p.x, p.y + 1));
+        neighbors.add(new Point(p.x, p.y - 1));
+        return neighbors;
+    }
+
+    private void moveToNextPoint(Point nextPoint, int deltaTime) {
+        if (isBlocked(nextPoint)) {
+            handleNoPathFound();
+            return;
+        }
+
+        double desiredRotation = calculateDesiredRotation(nextPoint);
+        adjustRotation(desiredRotation, deltaTime);
+
+        double desiredSpeed = calculateDesiredSpeed(nextPoint);
+        adjustSpeed(desiredSpeed, deltaTime);
+    }
+
+    private boolean isBlocked(Point point) {
+        int x = (int) point.x;
+        int y = (int) point.y;
+        if (x < 0 || x >= map.length || y < 0 || y >= map[0].length ) {
+            return true;
+        }
+        return map[x][y] == PixelState.blocked;
+    }
+
+    private double calculateDesiredRotation(Point nextPoint) {
+        Point dronePoint = drone.getOpticalSensorLocation();
+        double dx = nextPoint.x - dronePoint.x;
+        double dy = nextPoint.y - dronePoint.y;
+        return Math.toDegrees(Math.atan2(dy, dx));
+    }
+
+    private double calculateDesiredSpeed(Point nextPoint) {
+        double distance = Tools.getDistanceBetweenPoints(drone.getOpticalSensorLocation(), nextPoint);
+        return Math.min(WorldParams.max_speed, distance / 10); // Adjust based on distance or other criteria
+    }
+
+    private void adjustRotation(double desiredRotation, int deltaTime) {
+        double currentRotation = drone.getGyroRotation();
+        double rotationDiff = formatRotation(desiredRotation - currentRotation);
+        if (Math.abs(rotationDiff) > 1) { // Adding a threshold to avoid unnecessary small adjustments
+            int direction = (rotationDiff > 0) ? 1 : -1;
+            if (Math.abs(rotationDiff) > 180) {
+                direction = -direction;
+            }
+            drone.rotateLeft(deltaTime * direction);
+        }
+    }
+
+    private void adjustSpeed(double desiredSpeed, int deltaTime) {
+        double currentSpeed = drone.getSpeed();
+        double speedDiff = desiredSpeed - currentSpeed;
+        if (speedDiff > 0) {
+            drone.speedUp(deltaTime);
+        } else if (speedDiff < 0) {
+            drone.slowDown(deltaTime);
+        }
+    }
+
+    private void handleNoPathFound() {
+        // Rotate the drone 180 degrees when no path is found
+        spinBy(180);
+    }
+
     public void updateRotating(int deltaTime) {
-        if (degrees_left.isEmpty()) {
+        if (degrees_left.size() == 0) {
             return;
         }
 
         double degrees_left_to_rotate = degrees_left.get(0);
         boolean isLeft = degrees_left_to_rotate > 0;
+
         double curr = drone.getGyroRotation();
         double just_rotated = isLeft ? curr - lastGyroRotation : curr - lastGyroRotation;
+
+        if (isLeft) {
+            if (just_rotated > 0) {
+                just_rotated = -(360 - just_rotated);
+            }
+        } else {
+            if (just_rotated < 0) {
+                just_rotated = 360 + just_rotated;
+            }
+        }
 
         lastGyroRotation = curr;
         degrees_left_to_rotate -= just_rotated;
@@ -196,11 +418,14 @@ public class MPCAlgo implements Algo {
 
         if ((isLeft && degrees_left_to_rotate >= 0) || (!isLeft && degrees_left_to_rotate <= 0)) {
             degrees_left.remove(0);
-            Func func = degrees_left_func.remove(0);
+
+            Func func = degrees_left_func.get(0);
             if (func != null) {
                 func.method();
             }
-            if (degrees_left.isEmpty()) {
+            degrees_left_func.remove(0);
+
+            if (degrees_left.size() == 0) {
                 isRotating = 0;
             }
             return;
@@ -223,200 +448,52 @@ public class MPCAlgo implements Algo {
     }
 
     public void spinBy(double degrees, boolean isFirst) {
-        lastGyroRotation = drone.getGyroRotation();
-        if (isFirst) {
-            degrees_left.add(0, degrees);
-            degrees_left_func.add(0, null);
-        } else {
-            degrees_left.add(degrees);
-            degrees_left_func.add(null);
-        }
-        isRotating = 1;
+        spinBy(degrees, isFirst, null);
     }
 
     public void spinBy(double degrees) {
-        lastGyroRotation = drone.getGyroRotation();
-        degrees_left.add(degrees);
-        degrees_left_func.add(null);
-        isRotating = 1;
+        spinBy(degrees, false, null);
     }
 
     public Point getLastPoint() {
-        if (points.isEmpty()) {
-            return droneStartingPoint;
+        if (points.size() == 0) {
+            return init_point;
         }
         return points.get(points.size() - 1);
     }
 
     public Point removeLastPoint() {
         if (points.isEmpty()) {
-            return droneStartingPoint;
+            return init_point;
         }
         return points.remove(points.size() - 1);
     }
 
-    public Point getAvgLastPoint() {
-        if (points.size() < 2) {
-            return droneStartingPoint;
+    private static double formatRotation(double rotationValue) {
+        rotationValue %= 360;
+        if (rotationValue < 0) {
+            rotationValue += 360;
         }
-        Point p1 = points.get(points.size() - 1);
-        Point p2 = points.get(points.size() - 2);
-        return new Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
+        return rotationValue;
     }
 
-    private double getDistanceToDrone(Point p) {
-        Point dronePoint = drone.getOpticalSensorLocation();
-        Point fromPoint = new Point(dronePoint.x + droneStartingPoint.x, dronePoint.y + droneStartingPoint.y);
-        return Tools.getDistanceBetweenPoints(fromPoint, p);
-    }
-
-    public void ai(int deltaTime) {
-        if (!SimulationWindow.toogleAI) {
-            return;
-        }
-
-        if (unexploredPointsQueue.isEmpty()) {
-            return; // No unexplored points to navigate to
-        }
-
-        Point nextTarget = unexploredPointsQueue.peek();
-        double distance = getDistanceToDrone(nextTarget);
-        if (distance < max_distance_between_points) {
-            unexploredPointsQueue.poll(); // Remove the point if it is within the range
-            return;
-        }
-
-        // Implement A* algorithm to navigate towards the next target
-        List<Point> path = aStarPathfinding(drone.getOpticalSensorLocation(), nextTarget);
-
-        if (!path.isEmpty()) {
-            Point nextMove = path.get(0);
-            double targetRotation = Tools.getRotationToTarget(drone.getGyroRotation(), drone.getOpticalSensorLocation(), nextMove);
-            spinBy(targetRotation);
-            drone.moveTowards(nextMove , deltaTime);
-        }
-    }
-
-    private List<Point> aStarPathfinding(Point start, Point goal) {
-        Set<Point> closedSet = new HashSet<>();
-        PriorityQueue<Node> openSet = new PriorityQueue<>(Comparator.comparingDouble(n -> n.fScore));
-        java.util.Map<Point, Point> cameFrom = new HashMap<>();
-        java.util.Map<Point, Double> gScore = new HashMap<>();
-        gScore.put(start, 0.0);
-
-        openSet.add(new Node(start, 0, getHeuristic(start, goal)));
-
-        while (!openSet.isEmpty()) {
-            Node current = openSet.poll();
-
-            if (current.point.equals(goal)) {
-                return reconstructPath(cameFrom, current.point);
-            }
-
-            closedSet.add(current.point);
-
-            for (Point neighbor : getNeighbors(current.point)) {
-                if (closedSet.contains(neighbor)) {
-                    continue;
-                }
-
-                double tentativeGScore = gScore.getOrDefault(current.point, Double.POSITIVE_INFINITY) + getDistanceBetween(current.point, neighbor);
-
-                if (!openSet.contains(new Node(neighbor, 0, 0))) {
-                    openSet.add(new Node(neighbor, tentativeGScore, getHeuristic(neighbor, goal)));
-                } else if (tentativeGScore >= gScore.getOrDefault(neighbor, Double.POSITIVE_INFINITY)) {
-                    continue;
-                }
-
-                cameFrom.put(neighbor, current.point);
-                gScore.put(neighbor, tentativeGScore);
-            }
-        }
-
-        return new ArrayList<>(); // Return an empty path if no path is found
-    }
-
-    private List<Point> reconstructPath(java.util.Map<Point, Point> cameFrom, Point current) {
-        List<Point> totalPath = new ArrayList<>();
-        totalPath.add(current);
-
-        while (cameFrom.containsKey(current)) {
-            current = cameFrom.get(current);
-            totalPath.add(current);
-        }
-
-        Collections.reverse(totalPath);
-        return totalPath;
-    }
-
-    private double getHeuristic(Point a, Point b) {
-        return Tools.getDistanceBetweenPoints(a, b);
-    }
-
-    private double getDistanceBetween(Point a, Point b) {
-        return Tools.getDistanceBetweenPoints(a, b);
-    }
-
-    private List<Point> getNeighbors(Point point) {
-        List<Point> neighbors = new ArrayList<>();
-        int[] dx = {-1, 1, 0, 0};
-        int[] dy = {0, 0, -1, 1};
-
-        for (int i = 0; i < 4; i++) {
-            int nx = (int)point.x + dx[i];
-            int ny = (int)point.y + dy[i];
-
-            if (nx >= 0 && ny >= 0 && nx < map_size && ny < map_size && map[nx][ny] != PixelState.blocked) {
-                neighbors.add(new Point(nx, ny));
-            }
-        }
-
-        return neighbors;
-    }
-
-    private static class Node {
+    // Node class for A* algorithm
+    private class Node implements Comparable<Node> {
         Point point;
-        double gScore;
-        double fScore;
+        Node parent;
+        double g; // Cost from start to current node
+        double h; // Heuristic cost from current node to goal
 
-        Node(Point point, double gScore, double fScore) {
+        public Node(Point point, Node parent, double g, double h) {
             this.point = point;
-            this.gScore = gScore;
-            this.fScore = gScore + fScore;
+            this.parent = parent;
+            this.g = g;
+            this.h = h;
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Node node = (Node) o;
-            return point.equals(node.point);
+        public int compareTo(Node other) {
+            return Double.compare(this.g + this.h, other.g + other.h);
         }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(point);
-        }
-    }
-
-
-    public boolean isIs_risky() {
-        for (Lidar lidar : drone.lidars) {
-            if (lidar.current_distance < max_risky_distance) {
-                is_risky = true;
-                risky_distance = lidar.current_distance;
-                return true;
-            }
-        }
-        is_risky = false;
-        return false;
-    }
-
-    public double getRisky_dis() {
-        return risky_distance;
-    }
-
-    public Drone getDrone() {
-        return drone;
     }
 }

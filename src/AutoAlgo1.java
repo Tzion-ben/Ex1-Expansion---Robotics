@@ -134,6 +134,11 @@ public class AutoAlgo1 implements Algo {
 	}
 
 	@Override
+	public void setPixel(double x, double y, SLAMAlgo.PixelState state) {
+
+	}
+
+	@Override
 	public void setPixel(double x, double y, MPCAlgo.PixelState state) {
 
 	}
