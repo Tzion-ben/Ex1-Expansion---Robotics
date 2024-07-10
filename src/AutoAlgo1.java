@@ -305,9 +305,9 @@ public class AutoAlgo1 implements Algo {
 		if(SimulationWindow.return_home) {
 
 			if( Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) <  max_distance_between_points) {
-				if(points.size() <= 1 && Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) <  max_distance_between_points/5) {
+				if(points.size() <= 1 && Tools.getDistanceBetweenPoints(getLastPoint(), dronePoint) <  max_distance_between_points/2) {
 					speedDown();
-					if (Tools.getDistanceBetweenPoints(getLastPoint(), drone.startPoint) < max_distance_between_points / 1000) {
+					if (Tools.getDistanceBetweenPoints(getLastPoint(), drone.startPoint) < max_distance_between_points /2 ) {
 						// Optionally, check if drone is close enough to starting point to stop completely
 						drone.stop(); // Implement a method to stop the drone completely
 						SimulationWindow.return_home =false;

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.swing.*;
+import java.awt.geom.Point2D;
+
 
 public class SimulationWindow {
 
@@ -194,6 +196,22 @@ public class SimulationWindow {
         StartOver.setVisible(false);
         frame.getContentPane().add(StartOver);
 
+        JButton PerformanceAnalysis = new JButton("Performance Analysis");
+        PerformanceAnalysis.addActionListener(e -> {
+            String csvFile = "drone_log.csv";
+            String outputCsvFile = "drone_area_output.csv";
+            List<Point2D> points = DroneAreaCalculator.readCSV(csvFile);
+
+            if (points.size() > 2) {
+                double area = DroneAreaCalculator.calculateArea(points);
+                System.out.println("The area covered by the drone is: " + area + " square units");
+                DroneAreaCalculator.writeAreaToCSV(outputCsvFile, area);
+            }
+        });
+        PerformanceAnalysis.setVisible(true);
+        PerformanceAnalysis.setBounds(850, 480, 120, 30);
+        frame.getContentPane().add(PerformanceAnalysis);
+
         /*
          * Info label
          */
@@ -303,7 +321,7 @@ public class SimulationWindow {
         firstDroneBtn.addActionListener(e -> {
             ChoosenDronelgo resul = chooseAlgo(1);
 
-            DroneType droneType1 = new DroneType("Type 1", Arrays.asList(0, 60, -60));
+            DroneType droneType1 = new DroneType("Type 1", Arrays.asList(0, 60, -60 , 180));
             if(resul.getAlgoType().equals("AutoAlgo1"))
                 drones.add(new AutoAlgo1(map, droneType1, Color.BLUE));
             else
@@ -316,7 +334,7 @@ public class SimulationWindow {
         secondDroneBtn.addActionListener(e -> {
             ChoosenDronelgo resul = chooseAlgo(2);
 
-            DroneType droneType2 = new DroneType("Type 2", Arrays.asList(0, 80, -80));
+            DroneType droneType2 = new DroneType("Type 2", Arrays.asList(0, 90, -90 , 180));
             if(resul.getAlgoType().equals("AutoAlgo1"))
                 drones.add(new AutoAlgo1(map, droneType2, Color.RED));
             else
@@ -329,7 +347,7 @@ public class SimulationWindow {
         thirdDroneBtn.addActionListener(e -> {
             ChoosenDronelgo resul = chooseAlgo(3);
 
-            DroneType droneType3 = new DroneType("Type 3", Arrays.asList(0, 70, -70));
+            DroneType droneType3 = new DroneType("Type 3", Arrays.asList(0, 70, -70 , 180));
             if(resul.getAlgoType().equals("AutoAlgo3"))
                 drones.add(new AutoAlgo1(map, droneType3, Color.BLACK));
             else
