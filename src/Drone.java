@@ -21,6 +21,8 @@ public class Drone {
 	private double speed;
 	private CPU cpu;
 	private Color color; // New color attribute
+	private Point estimatedPosition;
+	private double estimatedOrientation;
 
 	// Add new sensor fields
 	private double yaw;
@@ -285,6 +287,28 @@ public class Drone {
 	private double calculateRoll() {
 		return Math.toDegrees(Math.atan2(accY, accX));
 	}
+	public Point getVelocity() {
+		return new Point(Vx, Vy);
+	}
+
+	public void setVelocity(double velocityX, double velocityY) {
+		this.Vx = velocityX;
+		this.Vy = velocityY;
+	}
+
+	public void setEstimatedPosition(Point position, double orientation) {
+		this.estimatedPosition = position;
+		this.estimatedOrientation = orientation;
+	}
+
+	public Point getEstimatedPosition() {
+		return estimatedPosition;
+	}
+
+	public double getEstimatedOrientation() {
+		return estimatedOrientation;
+	}
+
 
 	private double calculateAccelerationX(int deltaTime) {
 		return (Vx / deltaTime) * 1000;
