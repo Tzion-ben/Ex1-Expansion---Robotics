@@ -1,6 +1,8 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class SLAMAlgo implements Algo {
 
@@ -13,6 +15,9 @@ public class SLAMAlgo implements Algo {
     Point droneStartingPoint;
 
     ArrayList<Point> points;
+    List<Particle> particles;
+    int numParticles = 100;
+    Random random = new Random();
 
     int isRotating;
     ArrayList<Double> degrees_left;
@@ -23,6 +28,7 @@ public class SLAMAlgo implements Algo {
     GraphMine mGraph = new GraphMine();
 
     CPU ai_cpu;
+
     public SLAMAlgo(Map realMap, DroneType droneType, Color color) {
         degrees_left = new ArrayList<>();
         degrees_left_func = new ArrayList<>();
@@ -31,6 +37,7 @@ public class SLAMAlgo implements Algo {
         drone = new Drone(realMap, droneType, color);
 
         initMap(realMap);
+        initializeParticles();
 
         isRotating = 0;
         ai_cpu = new CPU(200, "SLAM_AI");
@@ -58,6 +65,107 @@ public class SLAMAlgo implements Algo {
     }
 
     public void update(int deltaTime) {
+        localizeAndMap();
+        superUpdate(deltaTime);
+    }
+
+    private void initializeParticles() {
+        particles = new ArrayList<>();
+        for (int i = 0; i < numParticles; i++) {
+            Particle p = new Particle(new Point(droneStartingPoint.x, droneStartingPoint.y), 0, 1.0 / numParticles);
+            particles.add(p);
+        }
+    }
+
+    public void localizeAndMap() {
+        Point velocity = drone.getVelocity();
+        double deltaX = velocity.x;
+        double deltaY = velocity.y;
+        double deltaTheta = drone.getGyroRotation();
+
+        motionUpdate(deltaX, deltaY, deltaTheta);
+        measurementUpdate();
+
+        estimateDronePosition();
+    }
+
+    private void motionUpdate(double deltaX, double deltaY, double deltaTheta) {
+        for (Particle p : particles) {
+            p.position.x += deltaX + random.nextGaussian() * 0.1;
+            p.position.y += deltaY + random.nextGaussian() * 0.1;
+            p.orientation += deltaTheta + random.nextGaussian() * 0.01;
+        }
+    }
+
+    private void measurementUpdate() {
+        for (Particle p : particles) {
+            double weight = 1.0;
+            for (Lidar lidar : drone.lidars) {
+                double expectedDistance = getExpectedDistance(p, lidar.degrees);
+                double actualDistance = lidar.current_distance;
+                weight *= calculateWeight(expectedDistance, actualDistance);
+            }
+            p.weight = weight;
+        }
+
+        normalizeWeights();
+        resampleParticles();
+    }
+
+    private double getExpectedDistance(Particle p, double lidarAngle) {
+        // Simplified version: assuming direct line-of-sight without obstacles
+        return 100; // Placeholder
+    }
+
+    private double calculateWeight(double expected, double actual) {
+        return Math.exp(-Math.pow(expected - actual, 2) / (2 * 1.0)); // Gaussian likelihood
+    }
+
+    private void normalizeWeights() {
+        double sum = 0;
+        for (Particle p : particles) {
+            sum += p.weight;
+        }
+        for (Particle p : particles) {
+            p.weight /= sum;
+        }
+    }
+
+    private void resampleParticles() {
+        List<Particle> newParticles = new ArrayList<>();
+        for (int i = 0; i < numParticles; i++) {
+            Particle p = selectParticle();
+            newParticles.add(new Particle(new Point(p.position.x, p.position.y), p.orientation, p.weight));
+        }
+        particles = newParticles;
+    }
+
+    private Particle selectParticle() {
+        double r = random.nextDouble();
+        double c = 0;
+        for (Particle p : particles) {
+            c += p.weight;
+            if (c >= r) {
+                return p;
+            }
+        }
+        return particles.get(particles.size() - 1); // should never happen
+    }
+
+    private void estimateDronePosition() {
+        double x = 0;
+        double y = 0;
+        double theta = 0;
+        for (Particle p : particles) {
+            x += p.position.x * p.weight;
+            y += p.position.y * p.weight;
+            theta += p.orientation * p.weight;
+        }
+
+        drone.setEstimatedPosition(new Point(x, y), theta);
+    }
+
+    public void superUpdate(int deltaTime) {
         updateVisited();
         updateMapByLidars();
 
@@ -71,7 +179,6 @@ public class SLAMAlgo implements Algo {
         } else {
             drone.slowDown(deltaTime);
         }
-
     }
 
     public void speedUp() {
