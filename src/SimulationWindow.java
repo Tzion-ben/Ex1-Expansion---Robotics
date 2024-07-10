@@ -40,6 +40,7 @@ public class SimulationWindow {
     private JButton secondDroneBtn  = new JButton("Second Drone");
     private JButton thirdDroneBtn  = new JButton("Third Drone");
     private JButton StartOver = new JButton("Start Over");
+    private JButton PerformanceAnalysis = new JButton("Performance Analysis");
 
     private void initialize() {
 
@@ -192,11 +193,10 @@ public class SimulationWindow {
             SimulationWindow.main(anotherClassArgs);
         });
 
-        StartOver.setBounds(926, 380, 120, 40);
+        StartOver.setBounds(850, 380, 120, 40);
         StartOver.setVisible(false);
         frame.getContentPane().add(StartOver);
 
-        JButton PerformanceAnalysis = new JButton("Performance Analysis");
         PerformanceAnalysis.addActionListener(e -> {
             String csvFile = "drone_log.csv";
             String outputCsvFile = "drone_area_output.csv";
@@ -208,8 +208,8 @@ public class SimulationWindow {
                 DroneAreaCalculator.writeAreaToCSV(outputCsvFile, area);
             }
         });
-        PerformanceAnalysis.setVisible(true);
-        PerformanceAnalysis.setBounds(850, 480, 120, 30);
+        PerformanceAnalysis.setVisible(false);
+        PerformanceAnalysis.setBounds(1000, 380, 120, 30);
         frame.getContentPane().add(PerformanceAnalysis);
 
         /*
@@ -321,7 +321,7 @@ public class SimulationWindow {
         firstDroneBtn.addActionListener(e -> {
             ChoosenDronelgo resul = chooseAlgo(1);
 
-            DroneType droneType1 = new DroneType("Type 1", Arrays.asList(0, 60, -60 , 180));
+            DroneType droneType1 = new DroneType("Type 1", Arrays.asList(0, 60, -60 ));
             if(resul.getAlgoType().equals("AutoAlgo1"))
                 drones.add(new AutoAlgo1(map, droneType1, Color.BLUE));
             else
@@ -334,7 +334,7 @@ public class SimulationWindow {
         secondDroneBtn.addActionListener(e -> {
             ChoosenDronelgo resul = chooseAlgo(2);
 
-            DroneType droneType2 = new DroneType("Type 2", Arrays.asList(0, 90, -90 , 180));
+            DroneType droneType2 = new DroneType("Type 2", Arrays.asList(0, 90, -90 ));
             if(resul.getAlgoType().equals("AutoAlgo1"))
                 drones.add(new AutoAlgo1(map, droneType2, Color.RED));
             else
@@ -347,8 +347,8 @@ public class SimulationWindow {
         thirdDroneBtn.addActionListener(e -> {
             ChoosenDronelgo resul = chooseAlgo(3);
 
-            DroneType droneType3 = new DroneType("Type 3", Arrays.asList(0, 70, -70 , 180));
-            if(resul.getAlgoType().equals("AutoAlgo3"))
+            DroneType droneType3 = new DroneType("Type 3", Arrays.asList(0, 70, -70 ));
+            if(resul.getAlgoType().equals("AutoAlgo1"))
                 drones.add(new AutoAlgo1(map, droneType3, Color.BLACK));
             else
                 drones.add(new SLAMAlgo(map, droneType3,Color.BLACK));
@@ -375,6 +375,7 @@ public class SimulationWindow {
 
     private void disableOther() {
         StartOver.setVisible(true);
+        PerformanceAnalysis.setVisible(true);
         firstDroneBtn.setVisible(false);
         secondDroneBtn.setVisible(false);
         thirdDroneBtn.setVisible(false);
@@ -382,6 +383,7 @@ public class SimulationWindow {
 
     private void enableOther() {
         StartOver.setVisible(false);
+        PerformanceAnalysis.setVisible(false);
         firstDroneBtn.setVisible(true);
         secondDroneBtn.setVisible(true);
         thirdDroneBtn.setVisible(true);
