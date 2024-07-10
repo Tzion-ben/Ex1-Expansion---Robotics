@@ -152,7 +152,10 @@ public class SimulationWindow {
          * Toggle AI
          */
         JButton toggleAIBtn = new JButton("Toggle AI");
-        toggleAIBtn.addActionListener(e -> toogleAI = !toogleAI);
+        toggleAIBtn.addActionListener(e -> {
+            returnBtn.setVisible(!returnBtn.isVisible());
+            toogleAI = !toogleAI;
+        });
         toggleAIBtn.setBackground(Color.ORANGE);
         toggleAIBtn.setBounds(1000, 240, 120, 30);
         frame.getContentPane().add(toggleAIBtn);

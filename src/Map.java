@@ -39,7 +39,11 @@ public class Map {
 				int green = (clr & 0x0000ff00) >> 8;
 				int blue = clr & 0x000000ff;
 
-				if((red == 255 && green == 255 && blue == 255) && runStart == 0)
+				if((red == 255 && green == 255 && blue == 255)
+						&&
+						(x>100 && y>100)
+						&&
+						runStart == 0)
 				{
 					runStart = 1;
 					this.drone_start_point = new Point(x, y);
