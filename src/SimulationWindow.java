@@ -49,6 +49,7 @@ public class SimulationWindow {
         frame = new JFrame();
         frame.setSize(1150, 650);
         frame.setTitle("Drone Simulator");
+        frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setLayout(null);
 

@@ -22,6 +22,8 @@ public class Drone {
 	private CPU cpu;
 	private Color color; // New color attribute
 
+	exportCSVlog logger = new exportCSVlog("drone_log.csv");
+
 	// Add new sensor fields
 	private double yaw;
 	private double Vx, Vy;
@@ -224,6 +226,7 @@ public class Drone {
 	public String getInfoHTML() {
 		DecimalFormat df = new DecimalFormat("#.####");
 
+
 		String info = "<html>";
 		info += "Rotation: " + df.format(rotation) + "<br>";
 		info += "Location: " + pointFromStart + "<br>";
@@ -239,7 +242,49 @@ public class Drone {
 		info += "accY: " + df.format(accY) + "<br>";
 
 		info += "</html>";
+
+		logData(rotation, pointFromStart, gyroRotation,  batteryLevel, yaw, pitch, roll, Vy, Vx, accX, accY);
+
 		return info;
+	}
+
+	// Method to log data
+	public void logData(double rotation, Point pointFromStart, double gyroRotation, double sensorOpticalFlow, double batteryLevel, double yaw, double pitch, double roll, double Vy, double Vx, double accX) {
+		if (!logger.isHeaderWritten()) {
+			String[] header = {
+					"Rotation",
+					"Location",
+					"Gyro Rotation",
+					"Sensor Optical Flow",
+					"Battery Level",
+					"Yaw",
+					"Pitch",
+					"Roll",
+					"Vy",
+					"Vx",
+					"AccX",
+					"AccY"
+			};
+			logger.addHeaderAndSave(header);
+			logger.setHeaderWritten(true);
+		}
+
+		DecimalFormat df = new DecimalFormat("#.####");
+		String[] row = {
+				df.format(rotation),
+				pointFromStart.toString(), // Assuming Point has a toString() method
+				df.format(gyroRotation),
+				String.valueOf(sensorOpticalFlow),
+				String.valueOf(batteryLevel),
+				df.format(yaw),
+				df.format(pitch),
+				df.format(roll),
+				df.format(Vy),
+				df.format(Vx),
+				df.format(accX),
+				df.format(accY)
+		};
+		logger.addRowAndSave(row);
 	}
 
 	public long getBatteryLevel() {
